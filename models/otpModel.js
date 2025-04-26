@@ -5,7 +5,11 @@ const otpSchema = new mongoose.Schema(
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "User",
+    },
+    user_role: {
+      type : String,
+      required : true,
+      enum : [ "User", "Host", "Admin"],
     },
     otp: {
       type: String,
