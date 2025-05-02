@@ -4,9 +4,9 @@ const Host = require("../../models/hostModel");
 
 const getHostProfile = async (req, res ) => {
     try {
-        const { email } = req.user;
+        const { id } = req.user;
 
-        const host = await Host.findOne( {email} );
+        const host = await Host.findById( id).select("-password -__v -createdAt -updatedAt");
         if ( !host ) {
             return res.status(STATUS_CODE.NOT_FOUND).json({
                 success : false,
@@ -18,11 +18,13 @@ const getHostProfile = async (req, res ) => {
             success : true,
             message : " Host Profile fetch successfully!",
             host : {
-                id : host._id,
-                name : host.name,
-                email : host.email,
-                mobile : host.mobile,
-                role : host.role,
+                id: host._id,
+                name: host.name,
+                email: host.email,
+                mobile: host.mobile,
+                profile_img: host.profile_img,
+                isVerified: host.isVerified,
+                role: host.role,
             },
             
         });

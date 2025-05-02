@@ -1,3 +1,4 @@
+//User Authentication Controller
 const User = require("../../models/userModel");
 const { hashPassword, comparePassword } = require("../../utils/hash");
 const STATUS_CODE = require("../../constants/statuscodes");
@@ -7,7 +8,7 @@ const sendMail = require("../../utils/sendMail");
 const OTP = require("../../models/otpModel");
 const { OAuth2Client } = require("google-auth-library");
 
-
+//User signup
 const signupUser = async (req, res) => {
   try {
     const { name, email, mobile, password, role } = req.body;
@@ -60,6 +61,7 @@ const signupUser = async (req, res) => {
   }
 };
 
+//user login
 const loginUser = async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -94,7 +96,10 @@ const loginUser = async (req, res) => {
     
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
-    
+     
+        await User.findByIdAndUpdate(existUser._id, {
+          refreshToken : refreshToken
+        });
         
     res.cookie( "accessToken", accessToken, {
       httpOnly : true,
@@ -203,13 +208,13 @@ const  googleSignupUser = async ( req, res ) => {
 };
 
 
-
+//user logout
 const logOutUser = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { id } = req.body;
 
-    if (userId) {
-      await User.findByIdAndUpdate(userId, { refreshToken: null });
+    if (id) {
+      await User.findByIdAndUpdate(id, { refreshToken: null });
     }
 
 

@@ -1,3 +1,4 @@
+//Host Profile related Routes
 const express = require('express');
 const router = express.Router();
 const { getHostProfile } = require("../../controllers/hostController/hostProfileController.JS");

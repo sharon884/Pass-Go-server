@@ -1,3 +1,4 @@
+//Host Authentication Controller
 const Host =  require("../../models/hostModel");
 const STATUS_CODE = require("../../constants/statuscodes");
 const { hashPassword, comparePassword } = require("../../utils/hash");
@@ -7,6 +8,7 @@ const otpModel = require("../../models/otpModel");
 const sendMail = require("../../utils/sendMail");
 const OTP = require("../../models/otpModel");
 
+// Host signup
 const signupHost = async ( req, res ) => {
     try {
         const { name, email, mobile, password, role } = req.body;
@@ -58,6 +60,7 @@ const signupHost = async ( req, res ) => {
     }
 };
 
+//Host Login
 const loginHost = async ( req, res ) => {
     try {
         const { email, password, role } = req.body;
@@ -93,7 +96,10 @@ const loginHost = async ( req, res ) => {
                 const accessToken = generateAccessToken(payload);
                 const refreshToken = generateRefreshToken(payload);
             
-                
+            await Host.findByIdAndUpdate(existHost._id, {
+                refreshToken : refreshToken
+            });
+
             res.cookie( "accessToken", accessToken, {
               httpOnly : true,
               secure : true,
@@ -129,8 +135,43 @@ const loginHost = async ( req, res ) => {
     }
 }
 
+//Host Logout
+const logOUtHost = async ( req, res ) => {
+    try {
+        const { id } = req.body;
+        if ( id ) {
+            await Host.findByIdAndUpdate(id, {
+                refreshToken : null
+            });
+        };
+
+        res.clearCookie("accessToken", {
+            httpOnly : true,
+            secure : true,
+            sameSite : "strict",
+        });
+
+        res.clearCookie("refreshToken", {
+            httpOnly : true,
+            secure : true,
+            sameSite : "strict",
+        });
+
+        return res.status(STATUS_CODE.SUCCESS).json({
+            success : true,
+            message : "Logged out successfully",
+        });
+    } catch ( error ) {
+        console.log("Logout error :", error);
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "Logout failed. please try again.",
+        });
+    }
+};
 
 module.exports = {
     signupHost,
     loginHost,
+    logOUtHost,
 }

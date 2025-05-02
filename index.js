@@ -32,6 +32,8 @@ app.use( "/api/user", userRoutes );
 app.use( "/api/host", hostRoutes );
 app.use( "/api/admin", adminRoutes);
 
+
+
 const PORT = process.env.PORT || 5000 ;
 
 

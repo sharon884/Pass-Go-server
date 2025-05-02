@@ -1,3 +1,4 @@
+// Admin Authentication Controller
 const Admin = require("../../models/adminModel");
 const STATUS_CODE = require("../../constants/statuscodes");
 const {
@@ -5,7 +6,9 @@ const {
   generateRefreshToken,
 } = require("../../utils/jwt");
 const { comparePassword } = require("../../utils/hash");
+const { logOUtHost } = require("../hostController/hostAuthController");
 
+// admin login
 const loginAdmin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -45,6 +48,10 @@ const loginAdmin = async (req, res) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
+    await Admin.findByIdAndUpdate(existAdmin._id, {
+      refreshToken: refreshToken,
+    });
+
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
@@ -78,6 +85,44 @@ const loginAdmin = async (req, res) => {
   }
 };
 
+// admim logout 
+const logOutAdmin = async ( req, res ) => {
+  try { 
+
+    const { id } = req.body;
+     if ( id ) {
+      await Admin.findByIdAndUpdate(id, {
+        refreshToken : null
+      });
+     };
+
+     res.clearCookie("accessToken", {
+      httpOnly : true,
+      secure :true,
+      sameSite : "strict",
+     });
+
+     res.clearCookie("refreshToken", {
+      httpOnly : true,
+      secure : true,
+      sameSite : "strict",
+     });
+
+     return res.status(STATUS_CODE.SUCCESS).json({
+      success : true,
+      message : "Logged out successfully",
+     });
+
+  } catch ( error ) {
+    console.log("Logout error:", error);
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success : false,
+      message : "Logout failed. please try againg",
+    });
+  };
+};
+
 module.exports = {
   loginAdmin,
+  logOutAdmin,
 };
