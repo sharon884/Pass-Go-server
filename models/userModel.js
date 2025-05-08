@@ -19,15 +19,22 @@ const userSchema = new mongoose.Schema( {
           "Please enter a valid email address",
         ],
       },
+      googleId: {
+        type: String,
+        default: null, // only for Google-auth users
+      },
       password: {
         type: String,
-        required: [true, "Password is required"],
+        required: function () {
+          return !this.isGoogleAccount;
+        },
         minlength: [6, "Password must be at least 6 characters"],
-       
       },
       mobile: {
         type: String,
-        required: [true, "Mobile number is required"],
+        required: function () {
+          return !this.isGoogleAccount;
+        },
         match: [/^\d{10}$/, "Mobile number must be 10 digits"],
       },
       profile_image: {

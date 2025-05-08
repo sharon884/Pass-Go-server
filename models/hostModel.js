@@ -19,12 +19,17 @@ const hostSchema = new mongoose.Schema({
       },
       password: {
         type: String,
-        required: [true, "Password is required"],
+        required: function () {
+          return !this.isGoogleAccount;
+        },
         minlength: [6, "Password must be at least 6 characters"],
       },
       mobile: {
         type: String,
-        required: [true, "Mobile number is required"],
+        required: function () {
+          return !this.isGoogleAccount;
+        },
+        match: [/^\d{10}$/, "Mobile number must be 10 digits"],
       },
       profileImage: {
         type: String,
@@ -50,6 +55,10 @@ const hostSchema = new mongoose.Schema({
       refreshToken: {
         type: String,
         default: null,
+      },
+      isGoogleAccount: {
+        type: Boolean,
+        default: false,
       },
 });
 

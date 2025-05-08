@@ -1,7 +1,7 @@
 //Host Authentication related Routes
 const express = require("express");
  const router = express.Router(); 
- const { signupHost, loginHost, logOUtHost } = require("../../controllers/hostController/hostAuthController");
+ const { signupHost, loginHost, logOUtHost, googleSignupHost, forgetPasswordHost, verify_Forgot_Password_OTP_Host, resetPasswordHost, googleLoginHost } = require("../../controllers/hostController/hostAuthController");
 const { verifyOTP } = require("../../controllers/otpController");
 const verifyToken = require("../../middlewares/verifyTokenMiddleware");
 
@@ -10,6 +10,10 @@ const verifyToken = require("../../middlewares/verifyTokenMiddleware");
  router.post( "/verify-otp", verifyOTP);
  router.post( "/login", loginHost);
  router.route("/logoutHost").post(verifyToken, logOUtHost );
-
+ router.route("/google-signup").post( googleSignupHost );
+ router.route("/forgot-password").post( forgetPasswordHost );
+ router.route("/forgot-password/verify-otp").post(verify_Forgot_Password_OTP_Host);
+ router.route("/reset-password").post(resetPasswordHost)
+ router.route("/google-login").post(googleLoginHost);
 
  module.exports = router;

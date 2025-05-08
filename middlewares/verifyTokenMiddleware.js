@@ -18,10 +18,16 @@ const verifyToken = ( req, res, next ) => {
         next();
     }catch ( error ) {
         console.error("Token error:", error.message);
-        return res.status(STATUS_CODE.UNAUTHORIZED).json({
-            success : false ,
-            message : " invalid or expired accessToken "
+      if ( error.name === "TokenExpiredError") {
+        return res.status(STATUS_CODE.TOKEN_EXPIRED).json({
+            success : false,
+            message : "Access Token expired",
         });
+      }
+      return res.status(STATUS_CODE.UNAUTHORIZED).json({
+        success : false,
+        message : "Invalid access token",
+      })
     }
 };
 

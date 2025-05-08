@@ -1,74 +1,30 @@
 // middleware for validating the data of event adding
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 
-// Category list could be modularized to a config or constants file for easier maintenance
-const eventCategories = ["Music", "Art", "Fashion", "Motorsports"];
+const valdateEventCreation = [
+//basic info 
+body("title").notEmpty().withMessage("Event title is require"),
+body("description").notEmpty().withMessage("Event description is required"),
+body("category").notEmpty().withMessage("Event category is required"),
+body("location").notEmpty().withMessage("Event location is required"),
+body("date").notEmpty().withMessage("Event date is required"),
+body("time").notEmpty().withMessage("Event time is required"),
 
- const validateEventData = [
-   
-  body("title").notEmpty().withMessage("Event title is required"),
+// Ticket info
+body("tickets.VIP.price").isNumeric().withMessage("VIP ticket price must be a number"),
+body("tickets.VIP.quantity").isInt({min : 0}).withMessage("VIP ticket quantity must be a non- negative number"),
+body("tickets.general.price").isNumeric().withMessage("General ticket price must be a number"),
+body("tickets.general.quantity").isInt({min : 0}).withMessage("General ticket quantity must be a non - negative number"),
 
-  body("description").notEmpty().withMessage("Event description is required"),
+//Business info 
+body("businessInfo.name").notEmpty().withMessage("Bussiness name is required"),
+body("businessInfo.email").isEmail().withMessage("valid business email is required"),
+body("businessInfo.mobile").matches(/^\d{10}$/).withMessage("Valid mobile number is required"),
 
-  body("category")
-    .isIn(eventCategories)
-    .withMessage(
-      `Invalid category, valid categories are: ${eventCategories.join(", ")}`
-    ),
-
-  body("images")
-    .isArray({ min: 3 })
-    .withMessage("At least 3 images are required"),
-
-  body("location")
-    .isLength({ min: 3 })
-    .withMessage("Location should be at least 3 characters long"),
-
-  body("date").custom((value) => {
-    if (new Date(value) <= new Date()) {
-      throw new Error("Event date must be in the future");
-    }
-    return true;
-  }),
-
-  body("time").notEmpty().withMessage("Event time is required"),
-
-  // Ticket validation
-  body("tickets.vip.price")
-    .isFloat({ gt: 0 })
-    .withMessage("VIP ticket price must be greater than 0"),
-  body("tickets.vip.quantity")
-    .isInt({ gt: 0 })
-    .withMessage("VIP ticket quantity must be greater than 0"),
-  body("tickets.general.price")
-    .isFloat({ gt: 0 })
-    .withMessage("General ticket price must be greater than 0"),
-  body("tickets.general.quantity")
-    .isInt({ gt: 0 })
-    .withMessage("General ticket quantity must be greater than 0"),
-
-  // Business info validation
-  body("businessInfo.name").notEmpty().withMessage("Business name is required"),
-  body("businessInfo.organization_name")
-    .notEmpty()
-    .withMessage("Organization name is required"),
-  body("businessInfo.email")
-    .isEmail()
-    .withMessage("Please provide a valid email address"),
-  body("businessInfo.mobile")
-    .isMobilePhone()
-    .withMessage("Please provide a valid mobile number"),
-
-  // Handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-    console.log(errors);
-    console.log( "++++++++++++++++++++++===")
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-  },
+// images 
+body("images").isArray({min : 3}).withMessage("minimum 3 images are requried"),
+body("images.*").isString().withMessage("Each image must be a valid URL or path"),
 ];
 
-module.exports = { validateEventData } ;
+
+module.exports = valdateEventCreation;

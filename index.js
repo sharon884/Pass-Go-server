@@ -5,6 +5,7 @@ const connectDB  = require('./config/db');
 const userRoutes = require( "./routes/userRoutes/index");
 const hostRoutes = require( "./routes/hostRoutes/index");
 const adminRoutes = require( "./routes/adminRoutes/index");
+const refresTokenRoute = require("./routes/golbalRoutes/refreshtokenRoute")
 const cookieParser = require("cookie-parser");
 const  morgan = require('morgan')
 
@@ -31,6 +32,7 @@ app.use( "/api/user", userRoutes );
 
 app.use( "/api/host", hostRoutes );
 app.use( "/api/admin", adminRoutes);
+app.use( "/api/auth", refresTokenRoute);
 
 
 

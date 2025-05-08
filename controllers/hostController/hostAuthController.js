@@ -1,177 +1,475 @@
 //Host Authentication Controller
-const Host =  require("../../models/hostModel");
+const Host = require("../../models/hostModel");
 const STATUS_CODE = require("../../constants/statuscodes");
 const { hashPassword, comparePassword } = require("../../utils/hash");
-const { generateOTP, hashOtp,getOTPExpiry} = require("../../utils/otp");
-const { generateAccessToken, generateRefreshToken } = require("../../utils/jwt");
+const { generateOTP, hashOtp, getOTPExpiry } = require("../../utils/otp");
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../../utils/jwt");
 const otpModel = require("../../models/otpModel");
 const sendMail = require("../../utils/sendMail");
 const OTP = require("../../models/otpModel");
+const verifyGoogleToken = require("../../utils/verifyGoogleToken");
+const { json } = require("express");
 
 // Host signup
-const signupHost = async ( req, res ) => {
-    try {
-        const { name, email, mobile, password, role } = req.body;
+const signupHost = async (req, res) => {
+  try {
+    const { name, email, mobile, password, role } = req.body;
 
-        const hostExist = await Host.findOne({ email });
-        if ( hostExist ) {
-            return res.status(STATUS_CODE.CONFLICT).json({
-                message : "Email is already registered!",
-            });
-        }
-
-        const hashedPassword = await hashPassword( password );
-
-        const newHost = new Host ({
-            name,
-            email,
-            mobile,
-           password : hashedPassword,
-            role,
-        });
-        await newHost.save();
-
-        const plainOtp = generateOTP();
-        const hashedOtp = hashOtp(plainOtp);
-        const expiresAt = getOTPExpiry();
-
-        await OTP.create({
-            user_id : newHost._id,
-            user_role : "Host",
-            otp : hashedOtp,
-            expiresAt,
-        });
-
-        await sendMail( email , "your OTP code", `Your OTP code is :${plainOtp}`);
-        console.log(plainOtp);
-
-        return res.status(STATUS_CODE.CREATED).json({
-            message : "Signup successful! Please verify your account using the OTP sent to your email.",
-            id : newHost._id,
-            name : newHost.name,
-            email : newHost.email,
-            mobile : newHost.mobile,
-        });
-    } catch ( error ) {
-        console.log("signup error!");
-        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
-            message : "Something went wrong",
-        });
+    const hostExist = await Host.findOne({ email });
+    if (hostExist) {
+      return res.status(STATUS_CODE.CONFLICT).json({
+        message: "Email is already registered!",
+      });
     }
+
+    const hashedPassword = await hashPassword(password);
+
+    const newHost = new Host({
+      name,
+      email,
+      mobile,
+      password: hashedPassword,
+      role,
+    });
+    await newHost.save();
+
+    const plainOtp = generateOTP();
+    const hashedOtp = hashOtp(plainOtp);
+    const expiresAt = getOTPExpiry();
+
+    await OTP.create({
+      user_id: newHost._id,
+      user_role: "Host",
+      otp: hashedOtp,
+      expiresAt,
+    });
+
+    await sendMail(email, "your OTP code", `Your OTP code is :${plainOtp}`);
+    console.log(plainOtp);
+
+    return res.status(STATUS_CODE.CREATED).json({
+      message:
+        "Signup successful! Please verify your account using the OTP sent to your email.",
+      id: newHost._id,
+      name: newHost.name,
+      email: newHost.email,
+      mobile: newHost.mobile,
+    });
+  } catch (error) {
+    console.log("signup error!");
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      message: "Something went wrong",
+    });
+  }
 };
 
 //Host Login
-const loginHost = async ( req, res ) => {
-    try {
-        const { email, password, role } = req.body;
+const loginHost = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
 
-        if ( !email || !password || !role ) {
+    if (!email || !password || !role) {
+      return res.status(STATUS_CODE.BAD_REQUEST).json({
+        success: false,
+        message: "Email, Password and role are required",
+      });
+    }
+    const existHost = await Host.findOne({ email, role });
+    if (!existHost) {
+      return res.status(STATUS_CODE.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid credentials or role mismatch",
+      });
+    }
+
+    const isPasswordMatch = await comparePassword(password, existHost.password);
+    if (!isPasswordMatch) {
+      return res.status(STATUS_CODE.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid Password",
+      });
+    }
+
+    const payload = {
+      id: existHost._id,
+      email: existHost.email,
+      role: existHost.role,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    await Host.findByIdAndUpdate(existHost._id, {
+      refreshToken: refreshToken,
+    });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(STATUS_CODE.SUCCESS).json({
+      success: true,
+      message: "Login successfull",
+      host: {
+        id: existHost._id,
+        name: existHost.name,
+        email: existHost.email,
+        role: existHost.role,
+      },
+    });
+  } catch (error) {
+    console.log("Login error :", error);
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "server error during Login",
+    });
+  }
+};
+
+//Host Logout
+const logOUtHost = async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (id) {
+      await Host.findByIdAndUpdate(id, {
+        refreshToken: null,
+      });
+    }
+
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.log("Logout error :", error);
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Logout failed. please try again.",
+    });
+  }
+};
+
+//Host signup with google
+const googleSignupHost = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(STATUS_CODE.BAD_REQUEST).json({
+        success: false,
+        message: "Token is missing",
+      });
+    }
+
+    const googleData = await verifyGoogleToken(token);
+    if (!googleData.email_verified) {
+      return res.status(STATUS_CODE.FORBIDDEN).json({
+        success: false,
+        message: "Email not verified",
+      });
+    }
+
+    const existHost = await Host.findOne({ email: googleData.email });
+    if (existHost) {
+      return res.status(STATUS_CODE.CONFLICT).json({
+        success: false,
+        message: " Host alredy exists with this email.Try Log In",
+      });
+    }
+
+    const newHost = await Host.create({
+      name: googleData.name,
+      email: googleData.email,
+      profile_image: googleData.picture,
+      googleId: googleData.googleId,
+      isGoogleAccount: true,
+      role: "host",
+    });
+
+    const payload = {
+      id: newHost._id,
+      email: newHost.email,
+      role: newHost.role,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    await Host.findByIdAndUpdate(newHost._id, {
+      refreshToken: refreshToken,
+    });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(STATUS_CODE.CREATED).json({
+      success: true,
+      message: "Google signup successful",
+      host: {
+        _id: newHost._id,
+        name: newHost.name,
+        email: newHost.email,
+        profile_image: newHost.profile_image,
+        role: "host",
+      },
+    });
+  } catch (error) {
+    console.log("Google signup Error:", error);
+    res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Google signup failed",
+    });
+  }
+};
+
+//Google Login host 
+const googleLoginHost = async ( req, res ) => {
+    try {
+        const { token } = req.body;
+        if ( !token ) {
             return res.status(STATUS_CODE.BAD_REQUEST).json({
                 success : false,
-                message : "Email, Password and role are required",
-            })
-        };
-        const existHost = await Host.findOne({ email, role});
-        if ( !existHost ) {
-            return res.status(STATUS_CODE.UNAUTHORIZED).json({
-                success : false,
-                message : "Invalid credentials or role mismatch",
+                message : "Token is missing",
             });
-        }
-        
-        const isPasswordMatch = await comparePassword( password, existHost.password);
-        if ( !isPasswordMatch ) {
-            return res.status(STATUS_CODE.UNAUTHORIZED).json({
+        };
+
+        const googleData = await verifyGoogleToken(token);
+        if ( !googleData.email_verified ) {
+            return res.status(STATUS_CODE.FORBIDDEN).json({
                 success : false,
-                message : "Invalid Password",
+                message : "Email not verified",
+            });
+        };
+
+        const existHost = await Host.findOne({email : googleData.email});
+        if ( !existHost ) {
+            return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "Host not found. Please signuo first",
             });
         };
 
         const payload = {
-                  id: existHost._id,
-                  email : existHost.email,
-                  role : existHost.role,
-                };
-            
-                const accessToken = generateAccessToken(payload);
-                const refreshToken = generateRefreshToken(payload);
-            
-            await Host.findByIdAndUpdate(existHost._id, {
-                refreshToken : refreshToken
-            });
+            id : existHost._id,
+            email : existHost.email,
+            role : existHost.role,
+        };
 
-            res.cookie( "accessToken", accessToken, {
-              httpOnly : true,
-              secure : true,
-              sameSite : "strict",
-              maxAge :15 * 60 * 1000,
-            });
-        
-            res.cookie( "refreshToken", refreshToken, {
-              httpOnly : true,
-              secure : true,
-              sameSite : "strict",
-              maxAge :30 * 24 * 60 * 60 * 1000,
-            });
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
 
+        await Host.findByIdAndUpdate(existHost._id, {
+            refreshToken : refreshToken,
+        });
+
+        res.cookie("accessToken", accessToken, {
+            httpOnly : true,
+            secure : true,
+            sameSite : "strict",
+            maxAge : 15 * 60 * 1000,
+        });
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly : true,
+            secure : true,
+            sameSite : "strict",
+            maxAge : 30 * 24 * 60 * 60 * 1000,
+        });
 
         res.status(STATUS_CODE.SUCCESS).json({
             success : true,
-            message : "Login successfull",
+            message : "Google Login successfull",
             host : {
-                id: existHost._id,
-                name: existHost.name,
-                email: existHost.email,
-                role: existHost.role,
-            },
+                _id : existHost._id,
+                name : existHost.name,
+                profile_image : existHost.profile_image,
+                mobile : existHost.mobile,
+                role : "host",
+            }
         });
-
+ 
     } catch ( error ) {
-        console.log("Login error :" , error);
-        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+        console.log("Google Login error:", error );
+        res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
             success : false,
-            message : "server error during Login",
+            message : "Google Login failed",
         });
-    }
-}
+    };
+};
 
-//Host Logout
-const logOUtHost = async ( req, res ) => {
+
+// Forget password Host 
+const forgetPasswordHost = async ( req, res ) => {
     try {
-        const { id } = req.body;
-        if ( id ) {
-            await Host.findByIdAndUpdate(id, {
-                refreshToken : null
-            });
+        const { email } = req.body;
+        existHost = await Host.findOne({ email });
+        if ( !existHost ) {
+               return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "Email not found",
+               });
         };
 
-        res.clearCookie("accessToken", {
-            httpOnly : true,
-            secure : true,
-            sameSite : "strict",
-        });
+       const plainOtp = generateOTP();
+       const hashedOtp = hashOtp(plainOtp);
+       const expiresAt = getOTPExpiry();
 
-        res.clearCookie("refreshToken", {
-            httpOnly : true,
-            secure : true,
-            sameSite : "strict",
-        });
+       await OTP.create({
+        user_id : existHost._id,
+        user_role : "Host",
+        otp : hashedOtp,
+        expiresAt,
+       });
 
-        return res.status(STATUS_CODE.SUCCESS).json({
-            success : true,
-            message : "Logged out successfully",
-        });
-    } catch ( error ) {
-        console.log("Logout error :", error);
+       await sendMail(email, "Your OTP code", `Your OTP code is:${plainOtp}`);
+       console.log(plainOtp);
+
+       return res.status(STATUS_CODE.SUCCESS).json({
+         success : true,
+         message : "please veify your account using the otp sent to your email ",
+         id : existHost._id,
+       });
+    }catch ( error ) {
+        console.log("Forget Password error:", error);
         return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
             success : false,
-            message : "Logout failed. please try again.",
+            message : "Internal sever errror",
         });
     }
 };
 
-module.exports = {
-    signupHost,
-    loginHost,
-    logOUtHost,
+// verify otp for forget password
+const verify_Forgot_Password_OTP_Host = async ( req, res ) => {
+    try {
+        const { id , otp } = req.body;
+        if ( !id || !otp ) {
+            return res.status(STATUS_CODE.BAD_REQUEST).json({
+                success : false,
+                message : "OTP and Id are required",
+            });
+        };
+   
+        const storedOTP = await OTP.findOne({user_id : id }).sort({createdAt : -1});
+        if ( ! storedOTP ) {
+            return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "OTP not found. please request a new one",
+            });
+        };
+
+        if ( storedOTP.expiresAt < Date.now()) {
+            return res.status(STATUS_CODE.UNAUTHORIZED).json({
+                success : false,
+                message : "OTP has expired",
+            });
+        };
+        
+        const hashedOtp = hashOtp(otp);
+        console.log(hashedOtp)
+        if ( storedOTP.otp !== hashedOtp ) {  
+            console.log(storedOTP.otp,"+++++")     
+            return res.status(STATUS_CODE.UNAUTHORIZED).json({
+                success : false,
+                message : "Invalid OTP",
+            });
+          
+        };
+
+        await OTP.deleteMany({user_id : id });
+        return res.status(STATUS_CODE.ACCEPTED).json({
+            success :true,
+            message : "OTP verified succesfully. Now you can reset your password",
+
+        });
+    }catch ( errror ) {
+        console.log("OTP verification error:", errror);
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "Internal server error",
+        });
+    };
+
+    };
+
+    //forget password reset password controller 
+    const resetPasswordHost = async ( req, res ) => {
+        try {
+            const { id , password } = req.body;
+           
+            if ( !id || !password ) {
+                return res.status(STATUS_CODE.BAD_REQUEST).json({
+                    success : false,
+                    message : "User Id and Password are required",
+                });
+            };
+
+            const host = await Host.findById(id);
+             if ( ! host ) {
+                return res.status(STATUS_CODE.NOT_FOUND).json({
+                    success : false,
+                    message : "User not found",
+                });
+             };
+             
+             const hashedPassword = await  hashPassword(password);
+             host.password = hashedPassword;
+             await host.save();
+
+             return res.status(STATUS_CODE.CREATED).json({
+                success : true,
+                message : "Password reset successfull.Plase login in wiht your new password",
+             
+          });
+    } catch ( error ) {
+        console.log("Resetpassword error:", error);
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "Internal server error",
+        });
+    };
 }
+module.exports = { 
+  signupHost,
+  loginHost,
+  logOUtHost,
+  googleSignupHost,
+  forgetPasswordHost,
+  verify_Forgot_Password_OTP_Host,
+  resetPasswordHost,
+  googleLoginHost,
+};

@@ -55,7 +55,7 @@ const eventSchema = new mongoose.Schema(
       match: [/^([01]\d|2[0-3]):([0-5]\d)$/, "Please provide a valid time in HH:MM format"],
     },
     tickets: {
-      vip: {
+      VIP: {
         price: { type: Number, required: true },
         quantity: { type: Number, required: true },
       },

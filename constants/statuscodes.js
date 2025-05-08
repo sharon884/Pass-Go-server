@@ -8,9 +8,11 @@ const StatusCodes = {
     FORBIDDEN : 403 ,
     NOT_FOUND : 404 ,
     CONFLICT : 409,
+    TOKEN_EXPIRED: 498, 
 
     INTERNAL_SERVER_ERROR: 500,
     SERVICE_UNAVAILABLE: 503,
+
 
 };
 
