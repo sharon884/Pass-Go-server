@@ -31,7 +31,7 @@ const hostSchema = new mongoose.Schema({
         },
         match: [/^\d{10}$/, "Mobile number must be 10 digits"],
       },
-      profileImage: {
+      profile_Image: {
         type: String,
         default: "", 
       },

@@ -1,3 +1,5 @@
+const { comparePassword, hashPassword } = require("../../utils/hash");
+
 const STATUS_CODE = require("../../constants/statuscodes");
 const Host = require("../../models/hostModel");
 
@@ -38,6 +40,91 @@ const getHostProfile = async (req, res ) => {
     }
 };
 
+const updatePasswordHost = async ( req, res ) => {
+    try {
+        const hostId = req.user.id;
+        const { currentPassword, newPassword } = req.body;
+
+        const host = await Host.findById(hostId);
+        if ( !host ) {
+            return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "Host not found",
+            });
+        };
+
+        const isMatch = await comparePassword(currentPassword, host.password );
+        if ( !isMatch ) {
+            return res.status(STATUS_CODE.BAD_REQUEST).json({
+                success : false,
+                message : "Incorrect current password",
+            });
+        };
+
+        if ( currentPassword === newPassword ) {
+            return res.status(STATUS_CODE.BAD_REQUEST).json({
+                success : false,
+                message : "New password cannot be the same as currentPassword",
+            });
+        };
+
+        const hashedPassword = await hashPassword(newPassword);
+        host.password = hashedPassword;
+        await host.save();
+
+        return res.status(STATUS_CODE.SUCCESS).json({
+            success : true,
+            message : "Password updated successfully",
+        });
+    } catch ( error ) {
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "server error"
+        });
+    };
+};
+
+
+const updateHostProfile = async ( req,  res ) => {
+    try {
+        const  hostId  = req.user.id;
+        const { name , mobile, profile_image } = req.body;
+
+        const existHost = await Host.findById(hostId);
+        if ( !existHost ) {
+            return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "Host not found!",
+            });
+        };
+
+        if ( name ) existHost.name = name ;
+        if ( mobile )  existHost.mobile = mobile;
+        if ( profile_image ) existHost.profile_Image = profile_image;
+        await existHost.save();
+
+        return res.status(STATUS_CODE.SUCCESS).json({
+            success : true,
+            message : "Host Profile updated successfully",
+            host : {
+                name : existHost.name,
+                email : existHost.email,
+                mobile : existHost.mobile,
+                profile_image : existHost.profile_Image,
+                role : existHost.role,
+            }
+        });
+
+    } catch ( error ) {
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "server error while during profile updating of host "
+        });
+    };
+};
+
 module.exports = {
     getHostProfile,
+    updatePasswordHost,
+    updateHostProfile,
 }

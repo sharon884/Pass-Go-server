@@ -104,6 +104,7 @@ const loginHost = async (req, res) => {
 
     await Host.findByIdAndUpdate(existHost._id, {
       refreshToken: refreshToken,
+      is_active :true,
     });
 
     res.cookie("accessToken", accessToken, {

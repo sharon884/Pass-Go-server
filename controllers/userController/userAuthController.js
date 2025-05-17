@@ -56,8 +56,9 @@ const signupUser = async (req, res) => {
       mobile: newUser.mobile,
     });
   } catch (error) {
-    console.log("signup error!");
+    console.log("signup error!", error);
     return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success : false,
       message: "Something went wrong",
     });
   }

@@ -3,6 +3,7 @@ const STATUS_CODE = require("../constants/statuscodes");
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 const verifyToken = ( req, res, next ) => {
+  console.log("jwt vannu")
     try {
         const token = req.cookies ?.accessToken;
         

@@ -2,6 +2,8 @@ const Host = require("../../models/hostModel");
 const STATUS_CODE = require("../../constants/statuscodes");
 
 const verifyHostMiddleware = async ( req, res, next ) => {
+    
+    
     try{
         const { id } = req.user;
         
