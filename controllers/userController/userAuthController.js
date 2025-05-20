@@ -127,6 +127,7 @@ const loginUser = async (req, res) => {
         email: existUser.email,
         role: existUser.role,
       },
+      accessToken,
     });
   } catch (error) {
     console.log("Login error:", error.message);

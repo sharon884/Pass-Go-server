@@ -130,6 +130,7 @@ const loginHost = async (req, res) => {
         email: existHost.email,
         role: existHost.role,
       },
+       accessToken,
     });
   } catch (error) {
     console.log("Login error :", error);

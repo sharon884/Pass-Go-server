@@ -1,42 +1,30 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require('dotenv');
-const connectDB  = require('./config/db'); 
-const userRoutes = require( "./routes/userRoutes/index");
-const hostRoutes = require( "./routes/hostRoutes/index");
-const adminRoutes = require( "./routes/adminRoutes/index");
-const refresTokenRoute = require("./routes/golbalRoutes/refreshtokenRoute")
-const cookieParser = require("cookie-parser");
-const  morgan = require('morgan')
+// server.js
+const http = require("http");
+const app = require("./app"); // Your Express app
+const { Server } = require("socket.io");
+const dotenv = require('dotenv'); // Ensure dotenv is configured if not already in app.js for PORT
 
-dotenv.config();
+dotenv.config(); // Load .env variables
 
-const app = express() ;
+const httpServer = http.createServer(app);
 
-app.use(morgan('dev'))
-
-app.use(express.json());
-app.use(cors({
-    origin :process.env.FRONTEND_URL, 
-    credentials : true,
-}));
-app.use(cookieParser());
-
-
-connectDB();
-
-app.get( '/' , ( req , res ) => {
-    res.send("PASS-GO is running !");
+// Initialize Socket.IO with the HTTP server
+const io = new Server(httpServer, {
+    cors: {
+        origin: process.env.FRONTEND_URL || "http://localhost:5173",
+        credentials: true,
+    },
 });
-app.use( "/api/user", userRoutes );
 
-app.use( "/api/host", hostRoutes );
-app.use( "/api/admin", adminRoutes);
-app.use( "/api/auth", refresTokenRoute);
+// Attach the io instance to the Express app object
+// This makes it accessible from request handlers (e.g., in your routes)
+app.set('socketio', io);
 
+// Pass the initialized 'io' instance to your socket setup module
+// This is where io.on('connection', ...) will be correctly set up.
+require("./socket/index")(io);
 
-
-const PORT = process.env.PORT || 5000 ;
-
-
-app.listen( PORT , () => console.log(`server is running on http://localhost:${PORT}`)) 
+const port = process.env.PORT || 5000;
+httpServer.listen(port, () => {
+    console.log(`API + WebSocket server running on http://localhost:${port}`);
+});

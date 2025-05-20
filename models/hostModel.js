@@ -39,6 +39,13 @@ const hostSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      verifyRequested: {
+      type: Boolean,
+      default: false,
+    },
+
+    verifyRequestedAt: Date,
+    
       is_active: {
         type: Boolean,
         default : false,
