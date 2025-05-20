@@ -25,7 +25,7 @@ const getHostProfile = async (req, res ) => {
                 name: host.name,
                 email: host.email,
                 mobile: host.mobile,
-                profile_img: host.profile_img,
+                profile_img: host.profileImage,
                 isVerified: host.isVerified,
                 role: host.role,
             },
@@ -111,7 +111,7 @@ const updateHostProfile = async ( req,  res ) => {
                 name : existHost.name,
                 email : existHost.email,
                 mobile : existHost.mobile,
-                profile_image : existHost.profile_Image,
+                profileImage : existHost.profile_Image,
                 role : existHost.role,
             }
         });

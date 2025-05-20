@@ -8,11 +8,17 @@ const adminRoutes = require( "./routes/adminRoutes/index");
 const refresTokenRoute = require("./routes/golbalRoutes/refreshtokenRoute")
 const cookieParser = require("cookie-parser");
 const  morgan = require('morgan');
+const http = require("http");
+const initializeSocket = require("./socket/socket");
 
 
 dotenv.config();
 
 const app = express() ;
+const server = http.createServer(app);
+
+const io = initializeSocket(server);
+
 
 app.use(morgan('dev'))
 
@@ -22,36 +28,26 @@ app.use(cors({
     credentials : true,
 }));
 app.use(cookieParser());
-
+app.set("io", io);
 
 connectDB();
 
 app.get( '/' , ( req , res ) => {
+    console.log("running")
     res.send("PASS-GO is running !");
 });
 
-app.get('/test', (req, res) => {
-    // Access the io instance from the app object
-    // This 'socketio' key is set in server.js
-    const io = req.app.get('socketio');
-    if (io) {
-        io.to("admins").emit("new-verify-request", {
-            hostId: 1,
-            name: 'Hello from test route!',
-            time: Date.now(),
-        });
-        console.log("Test event emitted to 'admins' room.");
-        res.send("Test event sent to admins!");
-    } else {
-        console.error("Socket.IO instance not found on app object in /test route.");
-        res.status(500).send("Socket.IO not initialized for the /test route.");
-    }
-});
+
+
 
 app.use( "/api/user", userRoutes );
 app.use( "/api/host", hostRoutes );
 app.use( "/api/admin", adminRoutes);
 app.use( "/api/auth", refresTokenRoute);
 
+ const port = process.env.PORT || 5000;
+server.listen(port, () => {
+    console.log(`server running on http://localhost${port}`);
+})
 
 module.exports = app;

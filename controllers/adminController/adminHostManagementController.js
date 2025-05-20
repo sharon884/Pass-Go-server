@@ -1,5 +1,6 @@
 const Host = require("../../models/hostModel");
 const STATUS_CODE = require("../../constants/statuscodes");
+const Notification = require("../../models/HostNotificationModel");
 
 const getAllHost = async (req, res) => {
   try {
@@ -75,12 +76,35 @@ const toggleVerifyHost = async (req, res) => {
     existHost.isVerified = !existHost.isVerified;
     await existHost.save();
 
+    const message = existHost.isVerified
+      ? "Your account has been verified by admin!"
+      : "Your account has been unverified by admin.";
+
+      await Notification.create({
+        userId : hostId,
+        message : message,
+      });
+
+      const io = req.app.get("io");
+      if ( io ) {
+        console.log(`Emitting 'host-verification-status' to hostId: ${hostId}`, message);
+        io.to(hostId).emit("host-verification-status", {
+        
+          message,
+          hostId,
+          verified : existHost.isVerified,
+          timestamp : Date.now(),
+        })
+         
+      }
+
     return res.status(STATUS_CODE.SUCCESS).json({
       success: true,
       message: `Host has been  ${
         existHost.isVerified ? "verified" : "Unverified"
       }`,
       existHost,
+     
     });
   } catch (error) {
     return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
