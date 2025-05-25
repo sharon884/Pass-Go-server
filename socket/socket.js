@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const Seat = require("../models/seatModel");
 
 const initializeSocket = (server) => {
     const io = new Server(server, {
@@ -28,6 +29,27 @@ const initializeSocket = (server) => {
 
         socket.on("lock-seats", ({ eventId, seats, lockExpiresAt }) => {
             socket.to(eventId).emit("seat-locked", { seats, lockExpiresAt });
+        });
+
+        socket.on("unlock-seats", async  ({ eventId, seats}) => {
+            try  {
+                if ( !eventId || !seats || !seats.length ) return;
+
+                await Seat.updateMany({
+                    _id : {$in : seats}, eventId } , {
+                    $set : {
+                        status : "available",
+                        lockExpiresAt : null,
+                    },
+                }
+                );
+                console.log(`Unlocked seats for event ${eventId}`, seats );
+                
+                //notifying other users in the room 
+                socket.to(eventId).emit("seat-unlocked", { seats});
+            } catch ( error ) {
+                console.log("Error unlocking seats:", error.message);
+            }
         })
 
         socket.on("disconnect", () => {
