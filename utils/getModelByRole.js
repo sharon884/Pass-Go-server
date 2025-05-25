@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const Host = require("../models/hostModel");
+const Admin = require("../models/adminModel");
 
 const getModelByRole = ( role ) => {
     switch ( role ) {

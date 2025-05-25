@@ -16,6 +16,20 @@ const initializeSocket = (server) => {
             console.log(`host ${hostId} joined their room`);
         });
 
+        socket.on("join-event-room", (eventId) => {
+            socket.join(eventId);
+            console.log(`user joined event room:${eventId}`);
+        })
+
+        socket.on("leave-event-room", (eventId) => {
+            socket.leave(eventId);
+            console.log(`user left event room:${eventId}`);
+        });
+
+        socket.on("lock-seats", ({ eventId, seats, lockExpiresAt }) => {
+            socket.to(eventId).emit("seat-locked", { seats, lockExpiresAt });
+        })
+
         socket.on("disconnect", () => {
             console.log("socket disconnected",socket.id);
         });

@@ -9,7 +9,7 @@ const verifyToken = ( req, res, next ) => {
         
 
         if ( !token ) {
-            return res.status(STATUS_CODE.UNAUTHORIZED).json({
+            return res.status(498).json({
                 success : false ,
                 message : "Access Token missing",
             });

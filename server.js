@@ -10,6 +10,7 @@ const cookieParser = require("cookie-parser");
 const  morgan = require('morgan');
 const http = require("http");
 const initializeSocket = require("./socket/socket");
+const startUnlockSeatsCron = require("./cron/unlockSeatsCron");
 
 
 dotenv.config();
@@ -29,6 +30,8 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.set("io", io);
+
+startUnlockSeatsCron(io);
 
 connectDB();
 

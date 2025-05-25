@@ -29,7 +29,8 @@ const seatSchema = new mongoose.Schema({
     default: null,
   },
   lockExpiresAt: {
-    type: Date, // when the lock expires
+    type: Date,
+    default : null, // when the lock expires
   },
 }, { timestamps: true });
 

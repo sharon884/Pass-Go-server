@@ -5,10 +5,8 @@ const {
   generateRefreshToken,
   verifyToken,
 } = require("../utils/jwt");
-const getModelByRole = require("../utils/getModelByRole");
-const User = require("../models/userModel");
-const Host = require("../models/hostModel");
-const Admin = require("../models/adminModel")
+const {getModelByRole} = require("../utils/getModelByRole");
+
 
 
 
@@ -18,6 +16,7 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const handleRefreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
+    console.log("request got at the refresh token endpoint")
 
     if (!refreshToken) {
       return res.status(STATUS_CODE.UNAUTHORIZED).json({
@@ -50,7 +49,8 @@ const handleRefreshToken = async (req, res) => {
       });
     }
 
-   const Model = getModelByRole(decoded.role);
+    console.log(decoded.role)
+   const Model =  await getModelByRole(decoded.role);
 
     const user = await Model.findById(decoded.id);
     if (!user || user.refreshToken !== refreshToken) {
