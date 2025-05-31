@@ -74,7 +74,7 @@ const getAllSeatsByEvent = async (req, res) => {
     const seats = await Seat.find({
       event: eventId,
     })
-      .select("_id seatNumber status category lockExpiresAt ")
+      .select("_id seatNumber price status category lockExpiresAt ")
       .lean();
 
     res.status(STATUS_CODE.SUCCESS).json({
@@ -135,6 +135,7 @@ const lockSeats = async (req, res) => {
       {
         $set: {
           status: "locked",
+          lockedBy: userId,
           lockExpiresAt: lockExpiresAt,
         },
       },

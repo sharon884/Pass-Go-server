@@ -8,9 +8,9 @@ const { updatePasswordHost } = require('../../controllers/hostController/hostPro
 const { requestVerificationHost } = require("../../controllers/hostController/hostProfileController");
 // const  updateHostProfile = require("../../controllers/hostController/hostProfileController.JS");
 
-router.get("/get-Host-Profile", verifyToken, getHostProfile);
+router.get("/get-host-Profile", verifyToken, getHostProfile);
 router.route("/update-password").patch( verifyToken, updatePasswordHost);
-router.route("/update-Host-Profile").put( verifyToken, updateHostProfile );
+router.route("/update-host-Profile").put( verifyToken, updateHostProfile );
 router.route("/account/verify-request").post( verifyToken, requestVerificationHost );
 
 module.exports = router;
