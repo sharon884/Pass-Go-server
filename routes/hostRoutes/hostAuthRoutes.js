@@ -4,12 +4,12 @@ const express = require("express");
  const { signupHost, loginHost, logOUtHost, googleSignupHost, forgetPasswordHost, verify_Forgot_Password_OTP_Host, resetPasswordHost, googleLoginHost } = require("../../controllers/hostController/hostAuthController");
 const { verifyOTP } = require("../../controllers/otpController");
 const verifyToken = require("../../middlewares/verifyTokenMiddleware");
-
+const hostOnly = require("../../middlewares/authorizedRoleMiddlewares/wrappers/hostOnly");
 
  router.post( "/signup", signupHost);
  router.post( "/verify-otp", verifyOTP);
  router.post( "/login", loginHost);
- router.route("/logoutHost").post(verifyToken, logOUtHost );
+ router.route("/logout-host").post(verifyToken, hostOnly, logOUtHost );
  router.route("/google-signup").post( googleSignupHost );
  router.route("/forgot-password").post( forgetPasswordHost );
  router.route("/forgot-password/verify-otp").post(verify_Forgot_Password_OTP_Host);

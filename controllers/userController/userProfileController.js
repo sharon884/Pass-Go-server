@@ -120,8 +120,36 @@ const updateProfileUser = async ( req, res ) => {
 };
 
 
+const getUserSidebarDetails = async ( req, res ) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById( userId ).select("name profile_image");
+
+    if ( !user ) {
+      return res.status(STATUS_CODE.NOT_FOUND).json({
+         success : false,
+         message : "User not found"
+      });
+    };
+
+    return res.status(STATUS_CODE.SUCCESS).json({
+      name : user.name,
+      profile_image : user.profile_image
+
+    });
+  } catch ( error ) {
+    console.log("Error fetching sidebar details:", error);
+    return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+      success : false,
+      message : "Server error",
+    })
+  }
+}
+
+
 module.exports = {
     getUserProfile,
     updatePasswordUser,
     updateProfileUser,
+    getUserSidebarDetails
 }

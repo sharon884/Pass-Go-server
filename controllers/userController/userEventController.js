@@ -50,8 +50,54 @@ const getEventById = async (req, res) => {
     }
 };
 
-module.exports = { getApprovedEvents,
+// search Events 
+const searchEvents = async ( req, res ) => {
+    try {
+        const { query = "", page = 1, limit = 6 } = req.query;
+
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+
+        const searchFilter = {
+            isApproved : true,
+            $or : [
+                 {title : {$regex : query, $options : "i"}},
+                 { description : {$regex : query, $options : "i"}},
+                 { category: {$regex : query, $options : "i"}},
+                 { location: {$regex : query, $options : "i"}},
+                 { "businessInfo.name" : {$regex : query, $options : "i"}},
+                 { "businessInfo.organization_name" : {$regex : query, $options : "i"}},
+
+            ],
+        };
+
+        const totalResults = await Event.countDocuments(searchFilter);
+
+        const totalPages = Math.ceil(totalResults / limitNum );
+
+        const events = await Event.find(searchFilter).sort({ date : 1}).skip((pageNum -1 ) * limitNum).limit(limitNum)
+         
+        res.status(STATUS_CODE.SUCCESS).json({
+            success : true,
+            events, 
+            totalResults,
+            totalPages,
+            page : pageNum,
+        });
+    } catch ( error ) {
+        console.log("Search events error:", error );
+        res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            message : "Internal server error"
+        })
+    }
+
+};
+
+module.exports = {
+     getApprovedEvents,
       getEventById,
+      searchEvents,
  };
 
 

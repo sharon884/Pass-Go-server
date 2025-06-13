@@ -7,7 +7,7 @@ const getUserBookings = async (req, res) => {
     const bookings = await Order.find({ userId })
       .populate("eventId", "name date")
       .lean();
-
+   console.log(bookings)
     return res.status(STATUS_CODE.SUCCESS).json({
       success: true,
       message: "Bookings fetched successfully",

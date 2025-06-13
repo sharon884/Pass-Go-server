@@ -6,10 +6,11 @@ const  verifyTokenMiddleware  = require("../../middlewares/verifyTokenMiddleware
 const  validateEventData  = require("../../middlewares/hostRelatedMiddlewares/hostEventAddingValidationMiddleware");
 const {  verifyHostMiddleware } = require("../../middlewares/hostRelatedMiddlewares/verifyHostMiddleware.js");
 const runValidation = require("../../middlewares/globalMiddleware/globalValidationResultMiddleware")
+const hostOnly = require("../../middlewares/authorizedRoleMiddlewares/wrappers/hostOnly");
 
 
-router.post( "/eventadd", verifyTokenMiddleware ,  verifyHostMiddleware,  validateEventData, runValidation, createEvent );
-router.route("/my-events").get(verifyTokenMiddleware,verifyHostMiddleware, getHostEvents )
-router.route("/:eventId").get(verifyTokenMiddleware,verifyHostMiddleware,getEventDetails)
-.put(verifyTokenMiddleware, verifyHostMiddleware, validateEventData, runValidation, updateEvent )
+router.post( "/eventadd", verifyTokenMiddleware , hostOnly, verifyHostMiddleware,  validateEventData, runValidation, createEvent );
+router.route("/my-events").get(verifyTokenMiddleware, hostOnly,verifyHostMiddleware, getHostEvents )
+router.route("/:eventId").get(verifyTokenMiddleware, hostOnly,verifyHostMiddleware,getEventDetails)
+.put(verifyTokenMiddleware, hostOnly, verifyHostMiddleware, validateEventData, runValidation, updateEvent )
 module.exports = router;

@@ -98,10 +98,10 @@ const updateHostProfile = async ( req,  res ) => {
                 message : "Host not found!",
             });
         };
-
+            console.log(profile_image)
         if ( name ) existHost.name = name ;
         if ( mobile )  existHost.mobile = mobile;
-        if ( profile_image ) existHost.profile_Image = profile_image;
+        if ( profile_image ) existHost.profileImage = profile_image;
         await existHost.save();
 
         return res.status(STATUS_CODE.SUCCESS).json({
@@ -182,9 +182,35 @@ const requestVerificationHost = async ( req, res ) => {
     };
 };
 
+const getHostSidebarDetails = async ( req, res ) => {
+    try {
+        const userId = req.user.id;
+        const host = await Host.findById( userId ).select("name profile_image");
+
+        if ( !host ) {
+            return res.status(STATUS_CODE.NOT_FOUND).json({
+                success : false,
+                message : "Host not found",
+            });
+        };
+         console.log(host.name, host.profile_Image);
+        return res.status(STATUS_CODE.SUCCESS).json({
+            name : host.name,
+            profile_image : host.profile_Image,
+        });
+    } catch ( error ) {
+        console.log("Error fetching sidebar details:", error);
+        return res.status(STATUS_CODE.INTERNAL_SERVER_ERROR).json({
+            success : false,
+            messag : "server error",
+        });
+    };
+};
+
 module.exports = {
     getHostProfile,
     updatePasswordHost,
     updateHostProfile,
-    requestVerificationHost
+    requestVerificationHost,
+    getHostSidebarDetails,
 }
