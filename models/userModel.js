@@ -75,7 +75,24 @@ const userSchema = new mongoose.Schema( {
       type : Date,
       default : null,
     },
-      
+       panNumber: {
+    type: String,
+    trim: true,
+    match: [/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN number"],
+  },
+  panImage: {
+    type: String, 
+    default: null,
+  },
+  hostVerificationStatus: {
+    type: String,
+    enum: ["none", "pending", "verified", "rejected"],
+    default: "none",
+  },
+  hostVerificationReason: {
+    type: String, 
+    default: null,
+  },
 });
 
 module.exports = mongoose.model('User' , userSchema)
