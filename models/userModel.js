@@ -62,6 +62,19 @@ const userSchema = new mongoose.Schema( {
         type: Boolean,
         default: false,
       },
+      isVerified: {
+        type: Boolean,
+        default: false,
+      },
+      verifyRequested: {
+      type: Boolean,
+      default: false,
+    },
+
+    verifyRequestedAt: {
+      type : Date,
+      default : null,
+    },
       
 });
 

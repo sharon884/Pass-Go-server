@@ -3,9 +3,9 @@ const sendMail = require("../utils/sendMail");
 const OTP = require("../models/otpModel");
 const STATUS_CODE = require("../constants/statuscodes");
 const User = require("../models/userModel");
-const Host = require("../models/hostModel");
+// const Host = require("../models/hostModel");
 const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
-const { getModelByRole} =  require("../utils/getModelByRole")
+// const { getModelByRole} =  require("../utils/getModelByRole")
 
 const sendOTP = async (req, res) => {
   try {
@@ -72,7 +72,7 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    const Model = getModelByRole(role);
+    // const Model = getModelByRole(role);
 
 
     const payload = {
@@ -86,7 +86,7 @@ const verifyOTP = async (req, res) => {
 
 
     
-    await Model.findByIdAndUpdate(userId, { 
+    await User.findByIdAndUpdate(userId, { 
       is_active: true, 
       refreshToken: refreshToken 
     });

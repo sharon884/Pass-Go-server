@@ -5,7 +5,8 @@ const {
   generateRefreshToken,
   verifyToken,
 } = require("../utils/jwt");
-const {getModelByRole} = require("../utils/getModelByRole");
+const User = require("../models/userModel");
+// const {getModelByRole} = require("../utils/getModelByRole");
 
 
 
@@ -50,9 +51,9 @@ const handleRefreshToken = async (req, res) => {
     }
 
     console.log(decoded.role)
-   const Model =  await getModelByRole(decoded.role);
+  //  const Model =  await getModelByRole(decoded.role);
 
-    const user = await Model.findById(decoded.id);
+    const user = await User.findById(decoded.id);
     if (!user || user.refreshToken !== refreshToken) {
       return res.status(STATUS_CODE.FORBIDDEN).json({
         success: false,

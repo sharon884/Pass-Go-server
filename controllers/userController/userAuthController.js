@@ -343,7 +343,8 @@ const forgetPasswordUser = async (req, res) => {
 //user logout
 const logOutUser = async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.user.id;
+    console.log( id )
 
     if (id) {
       await User.findByIdAndUpdate(id, { refreshToken: null });

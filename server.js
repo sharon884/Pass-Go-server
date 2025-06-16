@@ -44,7 +44,7 @@ app.get( '/' , ( req , res ) => {
 
 
 app.use( "/api/user", userRoutes );
-app.use( "/api/host", hostRoutes );
+// app.use( "/api/host", hostRoutes );
 app.use( "/api/admin", adminRoutes);
 app.use( "/api/auth", refresTokenRoute);
 
