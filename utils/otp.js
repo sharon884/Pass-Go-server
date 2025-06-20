@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const generateOTP = () => {
-    return Math.floor(1000 + Math.random() * 9090 ).toString();
+    return Math.floor(100000 + Math.random() * 909086 ).toString();
 };
 
 const hashOtp = (otp) => {
@@ -10,7 +10,7 @@ const hashOtp = (otp) => {
 
 const getOTPExpiry = () => {
     const expiry = new Date();
-    expiry.setMinutes(expiry.getMinutes() + 5);
+    expiry.setMinutes(expiry.getMinutes() + 3);
     return expiry;
 }
 

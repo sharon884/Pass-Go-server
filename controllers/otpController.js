@@ -3,7 +3,9 @@ const sendMail = require("../utils/sendMail");
 const OTP = require("../models/otpModel");
 const STATUS_CODE = require("../constants/statuscodes");
 const User = require("../models/userModel");
+// const Host = require("../models/hostModel");
 const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
+// const { getModelByRole} =  require("../utils/getModelByRole")
 
 const sendOTP = async (req, res) => {
   try {
@@ -35,12 +37,12 @@ const sendOTP = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
   try {
-    const { email, userId, otp } = req.body;
+    const { email, userId, otp, role } = req.body;
 
-    if (!email || !userId || !otp) {
+    if (!email || !userId || !otp || !role) {
       return res.status(STATUS_CODE.BAD_REQUEST).json({
         success: false,
-        message: "Email , OTP , and userId are required!",
+        message: "Email , OTP , Role and userId are required!",
       });
     }
     const hashedOtp = hashOtp(otp);
@@ -70,21 +72,45 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    await User.findByIdAndUpdate(userId, { isActive: true });
-    await OTP.deleteMany({ user_id: userId });
+    // const Model = getModelByRole(role);
+
 
     const payload = {
       id: userId,
+      email : email,
+      role : role,
     };
 
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
+
+    
+    await User.findByIdAndUpdate(userId, { 
+      is_active: true, 
+      refreshToken: refreshToken 
+    });
+
+    
+    await OTP.deleteMany({ user_id: userId });
+
+    res.cookie( "accessToken", accessToken, {
+      httpOnly : true,
+      secure : true,
+      sameSite : "strict",
+      maxAge :15 * 60 * 1000,
+    });
+
+    res.cookie( "refreshToken", refreshToken, {
+      httpOnly : true,
+      secure : true,
+      sameSite : "strict",
+      maxAge :30 * 24 * 60 * 60 * 1000,
+    })
+
     return res.status(STATUS_CODE.SUCCESS).json({
       success: true,
       message: " OTP verified successfully",
-      accessToken,
-      refreshToken,
     });
   } catch (error) {
     console.log("OTP verification error:", error);
@@ -146,3 +172,28 @@ module.exports = {
   verifyOTP,
   resendOTP,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
